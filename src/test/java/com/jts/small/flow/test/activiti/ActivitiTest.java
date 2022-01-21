@@ -38,18 +38,18 @@ public class ActivitiTest extends SmallFlowTest {
         String instanceKey = "Process_1";
         Map<String,Object> map = new HashMap<>();
         map.put("userId","0001");
-        ProcessInstance instance = runtimeService.startProcessInstanceByKey(instanceKey,map);
-        System.out.println(instance.getId());
-        System.out.println(instance.getProcessDefinitionId());
+        ProcessInstance instance = runtimeService.startProcessInstanceByKey(instanceKey);
 
-        Task task = taskService.createTaskQuery().processInstanceId(instance.getId()).singleResult();
+        String instanceId = instance.getId();
+        System.out.println("Task:"+taskService.createTaskQuery().count());
+        Task task = taskService.createTaskQuery().processInstanceId(instanceId).singleResult();
         if(Objects.nonNull(task)){
             Map<String,Object> map2 = new HashMap<>();
             map2.put("userId","0002");
             taskService.complete(task.getId(),map2);
             System.out.println("Task:"+task.getId());
         }else{
-            System.out.println("No found id"+instance.getId());
+            System.out.println("No found id "+instanceId);
         }
 
     }

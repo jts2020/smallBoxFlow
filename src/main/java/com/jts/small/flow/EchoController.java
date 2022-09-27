@@ -1,6 +1,7 @@
 package com.jts.small.flow;
 
 import lombok.extern.log4j.Log4j2;
+import org.camunda.bpm.engine.HistoryService;
 import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.TaskService;
@@ -29,6 +30,9 @@ public class EchoController {
     @Autowired
     private TaskService taskService;
 
+    @Autowired
+    private HistoryService historyService;
+
     @GetMapping("index")
     public String index() {
         String res = String.valueOf(System.nanoTime());
@@ -38,6 +42,7 @@ public class EchoController {
 
     @GetMapping("start")
     public String start() {
+
         ProcessInstance instance = runtimeService.startProcessInstanceByKey("Process_1");
         String instanceId = instance.getId();
         TaskQuery taskQuery = taskService.createTaskQuery().processInstanceId(instanceId);
@@ -49,6 +54,14 @@ public class EchoController {
                 log.info("start:instanceId[{}],taskId[{}] commit.", instanceId, taskId);
             });
         } while (Objects.nonNull(task));
+
+        historyService.createHistoricActivityInstanceQuery()
+                .processInstanceId(instanceId)
+                .orderByHistoricActivityInstanceStartTime()
+                .asc()
+                .list()
+                .stream()
+                .forEach(System.out::println);
         return "ok";
     }
 
@@ -58,8 +71,10 @@ public class EchoController {
         String instanceId = instance.getId();
         TaskQuery taskQuery = taskService.createTaskQuery().processInstanceId(instanceId);
         Task task = taskQuery.singleResult();
-        Optional.ofNullable(task).map(Task::getId).ifPresent(taskId ->
-                log.info("start0:instanceId[{}],taskId[{}] commit.", instanceId, taskId));
+        Optional.ofNullable(task)
+                .map(Task::getId)
+                .ifPresent(taskId ->
+                    log.info("start0:instanceId[{}],taskId[{}] commit.", instanceId, taskId));
         return "ok";
     }
 
@@ -69,9 +84,11 @@ public class EchoController {
         String instanceId = instance.getId();
         TaskQuery taskQuery = taskService.createTaskQuery().processInstanceId(instanceId);
         Task task = taskQuery.singleResult();
-        Optional.ofNullable(task).map(Task::getId).ifPresent(taskId -> {
-            taskService.complete(taskId);
-            log.info("start1:instanceId[{}],taskId[{}] commit.", instanceId, taskId);
+        Optional.ofNullable(task)
+                .map(Task::getId)
+                .ifPresent(taskId -> {
+                    taskService.complete(taskId);
+                    log.info("start1:instanceId[{}],taskId[{}] commit.", instanceId, taskId);
         });
         return "ok";
     }
